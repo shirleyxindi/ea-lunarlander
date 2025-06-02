@@ -107,6 +107,7 @@ class Evolution:
     # other
     n_jobs : int=4,
     verbose : bool=False,
+    archive_size : int=16
     ):
 
     # set parameters as attributes
@@ -130,6 +131,7 @@ class Evolution:
     self.num_evals = 0
     self.start_time, self.elapsed_time = 0, 0
     self.best_of_gens = list()
+    self.elitist_archive = list()
 
     self.memory = None
 
@@ -179,11 +181,14 @@ class Evolution:
 
     for i in range(self.pop_size):
       self.population[i].fitness = fitnesses[i]
+
+    self.elitist_archive = sorted(self.population, key=lambda t: t.fitness, reverse=True)[:self.archive_size]
     # store eval cost
     self.num_evals += self.pop_size
     # store best at initialization
     best = self.population[np.argmax([t.fitness for t in self.population])]
     self.best_of_gens.append(deepcopy(best))
+
 
   def _perform_generation(self):
     """
@@ -191,7 +196,7 @@ class Evolution:
     """
     # select promising parents
     sel_fun = self.selection["fun"]
-    parents = sel_fun(self.population, self.pop_size, **self.selection["kwargs"])
+    parents = sel_fun(self.population, self.pop_size - self.archive_size, **self.selection["kwargs"])
     # generate offspring
     offspring_population = Parallel(n_jobs=self.n_jobs)(delayed(generate_offspring)
       (t, self.crossovers, self.mutations, self.coeff_opts, 
@@ -211,16 +216,22 @@ class Evolution:
 
     fitnesses = fitnesses[0]
 
-    for i in range(self.pop_size):
+    for i in range(self.pop_size - self.archive_size):
       offspring_population[i].fitness = fitnesses[i]
     # store cost
-    self.num_evals += self.pop_size
+    self.num_evals += self.pop_size - self.archive_size
     # update the population for the next iteration
-    self.population = offspring_population
+    self.population = offspring_population + self.elitist_archive
+    self._update_elitist_archive()
     # update info
     self.num_gens += 1
     best = self.population[np.argmax([t.fitness for t in self.population])]
     self.best_of_gens.append(deepcopy(best))
+
+
+  def _update_elitist_archive(self):
+    sorted_population = sorted(self.population, key=lambda t: t.fitness, reverse=True)
+    self.elitist_archive = sorted_population[:self.archive_size]
 
   def evolve(self):
     """
