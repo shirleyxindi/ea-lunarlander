@@ -196,7 +196,7 @@ class Evolution:
     """
     # select promising parents
     sel_fun = self.selection["fun"]
-    parents = sel_fun(self.population, self.pop_size - self.archive_size, **self.selection["kwargs"])
+    parents = sel_fun(self.population, self.pop_size - self.archive_size, self.num_gens, **self.selection["kwargs"])
     # generate offspring
     offspring_population = Parallel(n_jobs=self.n_jobs)(delayed(generate_offspring)
       (t, self.crossovers, self.mutations, self.coeff_opts, 
