@@ -9,6 +9,9 @@ from genepro.multitree import Multitree
 from genepro.node import Node
 from genepro.node_impl import Constant
 
+gamma = 0.1
+epsilon = 1e-16
+
 def generate_random_multitree(n_trees : int, internal_nodes : list, leaf_nodes : list, max_depth : int):
   multitree = Multitree(n_trees)
   for _ in range(n_trees):
@@ -236,6 +239,41 @@ def coeff_mutation(multitree : Multitree, prob_coeff_mut : float= 0.25, temp : f
   
   multitree.children[r] = tree
   return multitree
+
+def coeff_mutation_es(multitree : Multitree, prob_coeff_mut : float= 0.25) -> Node:
+  """
+  Applies random coefficient mutations to constant nodes 
+
+  Parameters
+  ----------
+  tree : Node
+    the tree to which coefficient mutations are applied
+  prob_coeff_mut : float, optional
+    the probability with which coefficients are mutated (default is 0.25)
+
+
+  Returns
+  -------
+  Node
+    the tree after coefficient mutation (it is the same as the tree in input)
+  """
+  r = np.random.randint(multitree.n_trees)
+  tree = multitree.children[r]
+  coeffs = [n for n in tree.get_subtree() if type(n) == Constant]
+  for c in coeffs:
+    # decide wheter it should be applied
+    if randu() < prob_coeff_mut:
+      v = c.get_value()
+      # update the value with normal distribution
+      new_v = np.random.normal(v,c.sigma**2)
+      c.set_value(new_v)
+      c.sigma = max([np.exp(np.random.normal(0,gamma**2)),epsilon])
+      
+  
+  multitree.children[r] = tree
+  return multitree
+
+
 
 
 def __sample_node(tree : Node, unif_depth : bool=True) -> Node:

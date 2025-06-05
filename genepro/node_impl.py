@@ -2,6 +2,9 @@ import numpy as np
 from genepro.node import Node
 import torch
 import torch.nn as nn
+gamma = 0.1
+epsilon = 1e-16
+
 
 class Plus(Node, nn.Module):
   def __init__(self):
@@ -261,11 +264,13 @@ class Feature(Node, nn.Module):
 
 class Constant(Node, nn.Module):
   def __init__(self, value : float=None):
+    
     super(Constant,self).__init__()
     self.arity = 0
     self.__value = value
     self.symb = str(value) if value is not None else "const?"
     self.pt_value = None
+    self.sigma = max([np.exp(np.random.normal(0,gamma**2)),epsilon])
 
   def get_value(self):
     if not self.__value:
