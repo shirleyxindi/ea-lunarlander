@@ -234,12 +234,18 @@ class Evolution:
 
     self._initialize_population()
 
+
+    score_per_generation = []
+    time_per_generation = []
     # generational loop
     while not self._must_terminate():
       # perform one generation
       self._perform_generation()
       # log info
+      score_per_generation.append(self.best_of_gens[-1].fitness)
+      time_per_generation.append(time.time()-self.start_time)
+      #print(f"gen: {self.num_gens}")
       if self.verbose:
-        print("gen: {},\tbest of gen fitness: {:.3f},\tbest of gen size: {}".format(
-            self.num_gens, self.best_of_gens[-1].fitness, len(self.best_of_gens[-1])
-            ))
+        print(f"gen: {self.num_gens}\tpercentage done: {self.num_gens/self.max_gens*100}%")
+    return score_per_generation, time_per_generation
+
